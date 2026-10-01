@@ -1,0 +1,6 @@
+src/db/
+src/tmp/
+src/rest/mydatabase
+__pycache__/
+src/app/.eslintcache
+.codegraph/

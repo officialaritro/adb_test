@@ -16,19 +16,22 @@ services:
     build: .
     container_name: app
     command: bash -c "cd /src/app && yarn install && yarn start"
+    environment:
+      # react-scripts 4 (webpack 4) needs the legacy OpenSSL provider on Node 17+
+      - NODE_OPTIONS=--openssl-legacy-provider
     ports:
       - "3000:3000"
     volumes:
       - ${ADBREW_CODEBASE_PATH}:/src
 
   mongo:
-    build: .
+    image: mongo:4.4
     container_name: mongo
     restart: always
     ports:
       - "27017:27017"
     volumes:
       - ${ADBREW_CODEBASE_PATH}/db/:/data/db
-    command: /usr/bin/mongod --bind_ip 0.0.0.0
+    command: mongod --bind_ip 0.0.0.0
 
     
