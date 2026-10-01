@@ -66,3 +66,25 @@ When you run `localhost:3000`, you would see 2 things:
    * https://kinsta.com/blog/python-object-oriented-programming/
    * https://realpython.com/solid-principles-python/
    * https://www.toptal.com/python/python-design-patterns
+
+
+# Solution Notes
+
+## Setup fixes
+The original setup no longer builds on current base images and on Apple Silicon (arm64):
+1. `mongodb-org` 4.4 has no arm64 or Debian bookworm package. The `mongo` service now uses the official `mongo:4.4` image, and the Mongo install steps are removed from the `Dockerfile`.
+2. `easy_install` is no longer shipped with setuptools. `pip` is already in the `python:3.8` image, so the step is removed.
+3. `requirements.txt` had many unused packages (pandas, jupyter, matplotlib, celery). `pandas==1.1.2` has no arm64 wheel and fails to compile. The file now lists only what the API uses.
+4. The image ships Node 18. `react-scripts` 4 uses webpack 4, which needs `NODE_OPTIONS=--openssl-legacy-provider` on Node 17+. `yarn.lock` also pinned `postcss` 8.1.x, which uses a folder export that Node 17+ removed. A yarn `resolutions` entry pins it to 8.4.31.
+
+## Implementation
+* `GET /todos` returns all TODOs in insertion order. `POST /todos` takes `{"description": "..."}` and returns `201` with the created TODO. Both paths work with or without a trailing slash.
+* Invalid input returns `400` and a database failure returns `503`, both as `{"error": "..."}`.
+* Backend: `TodoRepository` wraps the Mongo collection, `TodoListView` handles HTTP (`src/rest/rest/views.py`).
+* Frontend: `api/todos.js` (HTTP calls), `hooks/useTodos.js` (state, refresh after create), `components/TodoList.js` and `components/TodoForm.js`.
+
+## Tests
+```
+docker exec api bash -c "cd /src/rest && python manage.py test rest"
+docker exec app bash -c "cd /src/app && CI=true yarn test"
+```
